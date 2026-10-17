@@ -5,27 +5,36 @@ import os
 DOWNLOAD_DIR = 'downloades'
 os.makedirs(DOWNLOAD_DIR,exist_ok = True)
 
-def download_youtube_audio(url :str) ->str:
-    output_path = os.path.join(DOWNLOAD_DIR, "%(title)s.%(ext)s")
+
+def download_youtube_audio(url: str) -> str:
+    output_path = os.path.join(DOWNLOAD_DIR, "%(id)s.%(ext)s")
+
     ydl_opts = {
         "format": "bestaudio/best",
         "outtmpl": output_path,
+        "noplaylist": True,
+        "retries": 3,
+        "fragment_retries": 3,
+        "quiet": True,
         "postprocessors": [
             {
                 "key": "FFmpegExtractAudio",
                 "preferredcodec": "wav",
-                "preferredquality": "192",
             }
         ],
-        "quiet": True,
     }
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=True)
         raw_filename = ydl.prepare_filename(info)
         filename = os.path.splitext(raw_filename)[0] + ".wav"
+
+    if not os.path.exists(filename):
+        raise FileNotFoundError(
+            f"Audio download finished, but WAV file was not found: {filename}"
+        )
+
     return filename
-
-
 
 def convert_to_wav(input_path: str) -> str:
     """Convert any audio/video file to WAV format using pydub."""
