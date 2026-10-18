@@ -17,6 +17,7 @@ def download_youtube_audio(url: str) -> str:
     "fragment_retries": 5,
     "quiet": False,
     "cachedir": False,
+    "verbose": True,
     "extractor_args": {
         "youtube": {
             "player_client": ["default,-android_sdkless"]
