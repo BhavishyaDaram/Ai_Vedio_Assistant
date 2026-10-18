@@ -1,7 +1,7 @@
 # ── AI Meeting Assistant ── requirements.txt ──────────────────────────────────
 # Python >= 3.10 recommended
 audioop-lts==0.2.2; python_version >= "3.13"
-yt-dlp
+yt-dlp[default]
 pydub
 
 # ── Audio / Video acquisition ─────────────────────────────────────────────────
