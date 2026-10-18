@@ -69,3 +69,31 @@ def extract_questions(transcript: str) -> str:
     except Exception as e:
         print(f"Error extracting questions: {e}")
         return "Failed to extract questions."
+
+
+if __name__ == "__main__":
+    sample_text = """
+    Alice: Let's agree to launch the beta next Tuesday.
+    Bob: Sounds good. I will finalize the documentation by Monday.
+    Charlie: Should we invite external testers or keep it internal?
+    """
+    print("\n" + "=" * 60)
+    print("📋 SAMPLE TRANSCRIPT")
+    print("=" * 60)
+    print(sample_text.strip())
+
+    print("\n" + "=" * 60)
+    print("✅ EXTRACTED ACTION ITEMS")
+    print("=" * 60)
+    print(extract_action_items(sample_text))
+
+    print("\n" + "=" * 60)
+    print("🔑 KEY DECISIONS")
+    print("=" * 60)
+    print(extract_key_decisions(sample_text))
+
+    print("\n" + "=" * 60)
+    print("❓ OPEN QUESTIONS")
+    print("=" * 60)
+    print(extract_questions(sample_text))
+
