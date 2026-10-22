@@ -14,6 +14,9 @@ load_dotenv()
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
+# True on Streamlit Cloud, False on your laptop
+IS_CLOUD = os.path.exists("/mount/src") or os.getenv("HOME") == "/home/adminuser"
+
 # ─── Page Config ────────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="AI Video Assistant",
@@ -208,7 +211,18 @@ with st.sidebar:
     st.markdown('<div class="hero-sub">Meeting Intelligence</div>', unsafe_allow_html=True)
     st.markdown("---")
 
-    input_mode = st.radio("Input Source", ["YouTube URL", "Upload File"])
+    input_mode = st.radio(
+        "Input Source",
+        ["YouTube URL", "Upload File"],
+        index=1 if IS_CLOUD else 0,  # default to Upload File when hosted
+    )
+
+    if IS_CLOUD and input_mode == "YouTube URL":
+        st.warning(
+            "YouTube often blocks downloads from hosted servers, so this may "
+            "fail with a 403 error. For best results, choose **Upload File** "
+            "or run the app locally."
+        )
 
     source = ""
     uploaded_file = None
@@ -288,7 +302,14 @@ if run_btn:
             }
             st.rerun()
         except Exception as e:
-            st.error(f"❌ Error: {e}")
+            msg = str(e)
+            if "403" in msg or "Forbidden" in msg:
+                st.error(
+                    "❌ YouTube blocked this download (HTTP 403). This happens on "
+                    "hosted servers. Please use **Upload File** instead, or run the app locally."
+                )
+            else:
+                st.error(f"❌ Error: {msg}")
 
 # ─── Results ────────────────────────────────────────────────────────────────────
 r = st.session_state.result
@@ -397,7 +418,7 @@ else:
             Ready to Analyse
         </div>
         <div style="color:var(--text-muted);font-size:0.85rem;max-width:380px;line-height:1.7">
-            Paste a YouTube URL or upload a file in the sidebar, choose your language, and hit <strong>Analyse</strong> to get started.
+            Upload a file (or paste a YouTube URL when running locally) in the sidebar, choose your language, and hit <strong>Analyse</strong> to get started.
         </div>
         <div style="margin-top:2rem;display:flex;gap:1rem;flex-wrap:wrap;justify-content:center">
             <span class="badge badge-orange">Transcription</span>
