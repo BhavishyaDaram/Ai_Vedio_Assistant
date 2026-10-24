@@ -26,8 +26,15 @@ def get_embeddings():
 
 def build_vector_store(transcript: str, persist_dir: str = CHROMA_PATH):
     """Split transcript text and build a Chroma vector store."""
+    cleaned_transcript = (transcript or "").strip()
+    if not cleaned_transcript:
+        cleaned_transcript = "No spoken content was detected in this recording."
+
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    docs = text_splitter.create_documents([transcript])
+    docs = text_splitter.create_documents([cleaned_transcript])
+    if not docs:
+        from langchain_core.documents import Document
+        docs = [Document(page_content=cleaned_transcript)]
 
     embeddings = get_embeddings()
     vector_store = Chroma.from_documents(

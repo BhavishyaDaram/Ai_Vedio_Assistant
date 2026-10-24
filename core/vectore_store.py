@@ -17,11 +17,17 @@ def get_embeddings():
 def build_vector_store(transcript : str)->Chroma:
     print("Building vector Store")
 
+    cleaned_transcript = (transcript or "").strip()
+    if not cleaned_transcript:
+        cleaned_transcript = "No spoken content was detected in this recording."
+
     splitter = RecursiveCharacterTextSplitter(
         chunk_size = 500,
         chunk_overlap = 50
     )
-    chunks = splitter.split_text(transcript)
+    chunks = splitter.split_text(cleaned_transcript)
+    if not chunks:
+        chunks = [cleaned_transcript]
 
     docs = [
         Document(page_content=chunk, metadata = {'chunk_index' : i})

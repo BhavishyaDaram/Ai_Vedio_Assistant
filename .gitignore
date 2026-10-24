@@ -6,4 +6,6 @@ __pycache__/
 chroma_db/
 .DS_Store
 downloades/
-downloades/
+downloads/
+cookies.txt
+.streamlit/secrets.toml

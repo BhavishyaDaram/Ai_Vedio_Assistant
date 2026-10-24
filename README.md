@@ -4,6 +4,10 @@ An AI-powered video intelligence application that transforms video and audio con
 
 The application allows users to process video content, generate transcripts and AI-powered insights, and interact with the processed content through a context-aware question-answering interface.
 
+## Note
+
+YouTube URLs may be blocked on the hosted demo because YouTube restricts cloud IPs; use **Upload File** online or run locally with `streamlit run app.py` for YouTube links.
+
 ## Overview
 
 Long-form videos such as lectures, meetings, interviews, webinars, and educational content often contain valuable information that is difficult to search manually.

@@ -1,6 +1,7 @@
 # Audio processing
 audioop-lts==0.2.2; python_version >= "3.13"
 yt-dlp[default]
+yt-dlp-ejs
 pydub>=0.25.1
 ffmpeg-python>=0.2.0
 

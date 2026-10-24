@@ -1,4 +1,5 @@
 import os
+import re
 import html
 import json
 import streamlit as st
@@ -93,6 +94,22 @@ h1, h2, h3, h4, h5, h6 { font-family: 'Syne', sans-serif !important; color: var(
 }
 [data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: var(--accent) !important; }
 
+/* Keep headings inside cards small so the layout stays tidy */
+[data-testid="stVerticalBlockBorderWrapper"] h1,
+[data-testid="stVerticalBlockBorderWrapper"] h2,
+[data-testid="stVerticalBlockBorderWrapper"] h3,
+[data-testid="stVerticalBlockBorderWrapper"] h4 {
+    font-size: 1rem !important;
+    margin: 0.9rem 0 0.3rem 0 !important;
+    padding: 0 !important;
+    color: var(--accent-glow) !important;
+}
+[data-testid="stVerticalBlockBorderWrapper"] p,
+[data-testid="stVerticalBlockBorderWrapper"] li {
+    font-size: 0.85rem !important;
+    line-height: 1.7 !important;
+}
+
 .card-title {
     font-family: 'Syne', sans-serif; font-size: 0.7rem; font-weight: 700;
     letter-spacing: 0.15em; text-transform: uppercase;
@@ -182,19 +199,33 @@ def reset_session():
     st.session_state.chat_history = []
 
 
-def card(title: str, content: str):
-    with st.container(border=True):
+def clean_md(text) -> str:
+    """Tidy LLM markdown so it displays neatly inside cards."""
+    text = str(text or "").strip()
+    lines = text.splitlines()
+    # Drop chatty intro lines such as "Here are the open questions ...:"
+    if lines and re.match(r"^(here (are|is)|sure|certainly|okay)\b.*:\s*$", lines[0].strip(), re.I):
+        lines = lines[1:]
+    text = "\n".join(lines).strip()
+    # Turn big headings (#, ##, ###) into small ones
+    text = re.sub(r"^\s{0,3}#{1,6}\s+(.*)$", r"#### \1", text, flags=re.M)
+    return text
+
+
+def card(title: str, content: str, height: int | None = None):
+    """Bordered card. With `height`, the card scrolls inside instead of growing the page."""
+    with st.container(border=True, height=height):
         st.markdown(f'<div class="card-title">{title}</div>', unsafe_allow_html=True)
-        st.markdown(content)
+        st.markdown(clean_md(content))
 
 
 def build_report_md(r: dict) -> str:
     return (
         f"# {r['title']}\n\n"
-        f"## Summary\n{r['summary']}\n\n"
-        f"## Action Items\n{r['action_items']}\n\n"
-        f"## Key Decisions\n{r['key_decisions']}\n\n"
-        f"## Open Questions\n{r['open_questions']}\n"
+        f"## Summary\n{clean_md(r['summary'])}\n\n"
+        f"## Action Items\n{clean_md(r['action_items'])}\n\n"
+        f"## Key Decisions\n{clean_md(r['key_decisions'])}\n\n"
+        f"## Open Questions\n{clean_md(r['open_questions'])}\n"
     )
 
 
@@ -236,6 +267,7 @@ with st.sidebar:
             "Upload audio / video",
             type=["mp4", "mkv", "mov", "webm", "mp3", "wav", "m4a"],
         )
+        st.caption("Tip: upload audio (.mp3) instead of video for much faster uploads.")
 
     language = st.selectbox("Language", ["english", "hinglish"], index=0)
 
@@ -303,9 +335,16 @@ if run_btn:
             st.rerun()
         except Exception as e:
             msg = str(e)
-            if "403" in msg or "Forbidden" in msg:
+            lower_msg = msg.lower()
+            if (
+                "403" in msg
+                or "forbidden" in lower_msg
+                or "list index out of range" in lower_msg
+                or "index" in lower_msg
+                or isinstance(e, IndexError)
+            ):
                 st.error(
-                    "❌ YouTube blocked this download (HTTP 403). This happens on "
+                    "❌ YouTube blocked this download (HTTP 403 / extraction error). This happens on "
                     "hosted servers. Please use **Upload File** instead, or run the app locally."
                 )
             else:
@@ -324,26 +363,29 @@ if r:
         ["📋 Summary & Takeaways", "💬 Chat with Meeting (RAG)", "📄 Full Transcript", "📤 Export Reports"]
     )
 
-    # ── Summary & Takeaways ──
+    # ── Summary & Takeaways (fixed-height scrollable cards = no endless page scroll) ──
     with tab_summary:
-        card("📋 Summary", r["summary"])
+        card("📋 Summary", r["summary"], height=380)
         c1, c2, c3 = st.columns(3, gap="medium")
         with c1:
-            card("✅ Action Items", r["action_items"])
+            card("✅ Action Items", r["action_items"], height=320)
         with c2:
-            card("🔑 Key Decisions", r["key_decisions"])
+            card("🔑 Key Decisions", r["key_decisions"], height=320)
         with c3:
-            card("❓ Open Questions", r["open_questions"])
+            card("❓ Open Questions", r["open_questions"], height=320)
 
     # ── Chat ──
     with tab_chat:
         st.markdown("### 💬 Interactive Meeting Assistant")
         st.caption("Ask questions about decisions, action items, or specific topics from this meeting.")
 
-        history_box = st.container()
+        history_box = st.container(height=420, border=True)
         question = st.chat_input("Ask a question about your meeting...")
 
         with history_box:
+            if not st.session_state.chat_history and not question:
+                st.caption("No messages yet. Ask something below 👇")
+
             for msg in st.session_state.chat_history:
                 with st.chat_message(msg["role"]):
                     st.markdown(msg["content"])
